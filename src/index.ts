@@ -1,7 +1,20 @@
-import { httpServer } from './http_server/index';
+import { createHttpBackEndServer } from './backend-server/index';
+import { createHttpFrontEndServer } from './frontend-server/index';
 
-const PORT = 8181;
+try {
+    const backend = createHttpBackEndServer();
+    const frontend = createHttpFrontEndServer();
 
-console.log(`Start http server on the http://localhost:${PORT} / http://127.0.0.1:${PORT}`);
+    process.on('SIGINT', (signal) => {
+        if (signal === 'SIGINT') {
+            backend.close();
+            frontend.close();
 
-httpServer.listen(PORT);
+            process.exit();
+        }
+    });
+} catch {
+    console.error('Something went wrong');
+
+    process.exit(1);
+}
