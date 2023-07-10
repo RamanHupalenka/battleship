@@ -1,13 +1,9 @@
+import { RequestType, WebSocketWithIdx } from '../types';
 import { WebSocketServer } from 'ws';
+import { notifyAnotherUsersAboutRoomsUpdate, roomsDB, usersDB } from '../globals';
 import { handleLoginRequest } from './handlers/login-handler';
-
-export const enum RequestType {
-    RegistrationLogin = 'reg',
-    CreateRoom = 'create_room',
-    AddUserToRoom = 'add_user_to_room',
-    UpdateRoom = 'update_room',
-    CreateGame = 'create_game',
-}
+import { handleAddUserToRoomRequest, handleCreateRoomRequest } from './handlers/rooms-handler';
+import { handleAddShipsRequest } from './handlers/ships-handler';
 
 type RequestBody = {
     type: RequestType;
@@ -23,17 +19,37 @@ export const createHttpBackEndServer = (): WebSocketServer => {
         port: backendPort,
     });
 
-    ws.on('connection', (socket) => {
+    ws.on('connection', (socket: WebSocketWithIdx) => {
         socket.on('message', (data) => {
             const requestBody: RequestBody = JSON.parse(String(data));
 
             if (requestBody.type === RequestType.RegistrationLogin) {
                 handleLoginRequest(socket, requestBody.data);
             }
+
+            if (requestBody.type === RequestType.CreateRoom) {
+                handleCreateRoomRequest(socket);
+            }
+
+            if (requestBody.type === RequestType.AddUserToRoom) {
+                handleAddUserToRoomRequest(socket, requestBody.data);
+            }
+
+            if (requestBody.type === RequestType.AddShips) {
+                handleAddShipsRequest(requestBody.data);
+            }
         });
 
-        socket.on('close', (code, reason) => {
-            console.log('Connection closed', code, String(reason));
+        socket.on('close', () => {
+            const username = usersDB.getUserNameByIdx(socket.idx);
+
+            if (username === 'unknown') return;
+
+            const roomIdx = usersDB.getUserRoomIdx(username);
+
+            roomsDB.removeUserFromTheRoom(username, roomIdx);
+
+            notifyAnotherUsersAboutRoomsUpdate();
         });
     });
 

@@ -1,20 +1,7 @@
-import { WebSocket } from 'ws';
-import { RequestType } from 'backend-server';
-import { usersDB } from '../db/index';
+import { WebSocketWithIdx, LoginResData, RequestType, LoginReqData } from 'types';
+import { sendRoomsUpdateToTheUser, sockets, usersDB } from '../../globals';
 
-type LoginReqData = {
-    name: string;
-    password: string;
-};
-
-type LoginResData = {
-    name: string;
-    index: number;
-    error: boolean;
-    errorText: string;
-};
-
-const sendResData = (socket: WebSocket, data: LoginResData): void => {
+const sendResData = (socket: WebSocketWithIdx, data: LoginResData): void => {
     socket.send(
         JSON.stringify({
             type: RequestType.RegistrationLogin,
@@ -24,46 +11,60 @@ const sendResData = (socket: WebSocket, data: LoginResData): void => {
     );
 };
 
-export const handleLoginRequest = (socket: WebSocket, data: string): void => {
+export const handleLoginRequest = (socket: WebSocketWithIdx, data: string): void => {
     const { password, name } = JSON.parse(data) as LoginReqData;
     const isUserDoesNotExists = usersDB.isNewUser(name);
 
     if (isUserDoesNotExists) {
-        const index = usersDB.nextUserIdx;
+        const idx = usersDB.getNextUserIdx();
 
         sendResData(socket, {
             name,
-            index,
+            index: idx,
             error: false,
             errorText: '',
         });
 
         usersDB.addUser(name, {
-            index,
+            userIdx: idx,
             password,
-            socket,
+            socketIdx: idx,
+            gameIdx: -1,
+            roomIdx: -1,
         });
+
+        socket.idx = idx;
+
+        sockets[idx] = socket;
+
+        sendRoomsUpdateToTheUser(socket);
 
         return;
     }
 
-    const { index } = usersDB.getUserMetadata(name);
+    const userIdx = usersDB.getUserIdx(name);
     const isUserPasswordValid = usersDB.isPasswordValid(name, password);
 
     if (isUserPasswordValid) {
         sendResData(socket, {
             name,
-            index,
+            index: userIdx,
             error: false,
             errorText: '',
         });
+
+        socket.idx = userIdx;
+
+        sockets[userIdx] = socket;
+
+        sendRoomsUpdateToTheUser(socket);
 
         return;
     }
 
     sendResData(socket, {
         name,
-        index,
+        index: userIdx,
         error: true,
         errorText: 'Your password is wrong, please, try again!',
     });
