@@ -8,13 +8,25 @@ export const enum RequestType {
     CreateGame = 'create_game',
     AddShips = 'add_ships',
     StartGame = 'start_game',
+    Turn = 'turn',
+    Attack = 'attack',
+    RandomAttack = 'randomAttack',
 }
 
+export type ShipPosition = {
+    x: number;
+    y: number;
+};
+
+export type ShipPositionWithStatus = {
+    x: number;
+    y: number;
+    status: 'alive' | 'killed';
+};
+
 export type ShipsInfo = {
-    position: {
-        x: number;
-        y: number;
-    };
+    position: ShipPosition;
+    positions?: ShipPositionWithStatus[];
     direction: boolean;
     length: number;
     type: 'small' | 'medium' | 'large' | 'huge';
@@ -24,6 +36,7 @@ export type GameUserInfo = {
     username: string;
     userIdx: number;
     ships: ShipsInfo[];
+    missedShoots: ShipPosition[];
 };
 
 export type WebSocketsMap = {

@@ -69,6 +69,7 @@ export const handleAddUserToRoomRequest = (socket: WebSocketWithIdx, data: strin
                 ships: [],
                 userIdx: user.index,
                 username: user.name,
+                missedShoots: [],
             });
         });
 

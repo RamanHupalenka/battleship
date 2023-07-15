@@ -1,28 +1,59 @@
-// export const handleAddShipsRequest = (_data: string) => {
-// const { gameId, ships, indexPlayer } = JSON.parse(data) as AddShipsReqData;
+import { RequestType } from '../../types';
+import { gamesDB, sockets } from '../../globals';
 
-// updateGameUserShips(gameId, ships, indexPlayer);
+type AttackReqData = {
+    x: number;
+    y: number;
+    gameId: number;
+    indexPlayer: number;
+};
 
-// if (isUsersReadyForGameStart(gameId)) {
-//     const { gameUsers } = gamesDB[String(gameId)]!;
-//     const randomIndex = Math.floor(Math.random() * 2);
-//     const currentPlayerIndex = gameUsers[randomIndex]!.userIdx;
+type AttackResData = {
+    position: {
+        x: number;
+        y: number;
+    };
+    currentPlayer: number;
+    status: 'miss' | 'killed' | 'shot';
+};
 
-//     gamesDB[String(gameId)]!.currentPlayerIndex = currentPlayerIndex;
+export const handleAttackRequest = (data: string) => {
+    const { x, y, gameId, indexPlayer } = JSON.parse(data) as AttackReqData;
 
-//     gameUsers.forEach((u) => {
-//         const userSocket = sockets[u.userIdx]!;
+    if (gamesDB.getCurrentPlayerIndex(gameId) === indexPlayer) {
+        const gameUsers = gamesDB.getGameUsers(gameId);
+        const nextUser = gameUsers.filter((u) => u.userIdx !== indexPlayer).pop();
+        const shotResult = gamesDB.getShootResult(gameId, { x, y });
 
-//         userSocket.send(
-//             JSON.stringify({
-//                 type: RequestType.StartGame,
-//                 data: JSON.stringify({
-//                     ships: u.ships,
-//                     currentPlayerIndex,
-//                 }),
-//                 id: 0,
-//             }),
-//         );
-//     });
-// }
-// };
+        if (shotResult) {
+            const nextCurrentPlayer = shotResult.status === 'miss' ? nextUser!.userIdx : indexPlayer;
+
+            gamesDB.updateCurrentPlayerIndex(gameId, nextCurrentPlayer);
+
+            gameUsers.forEach((u) => {
+                const userSocket = sockets[u.userIdx]!;
+
+                userSocket.send(
+                    JSON.stringify({
+                        type: RequestType.Attack,
+                        data: JSON.stringify({
+                            currentPlayer: indexPlayer,
+                            ...shotResult,
+                        } as AttackResData),
+                        id: 0,
+                    }),
+                );
+
+                userSocket.send(
+                    JSON.stringify({
+                        type: RequestType.Turn,
+                        data: JSON.stringify({
+                            currentPlayer: nextCurrentPlayer,
+                        }),
+                        id: 0,
+                    }),
+                );
+            });
+        }
+    }
+};

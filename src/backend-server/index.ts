@@ -4,6 +4,8 @@ import { notifyAnotherUsersAboutRoomsUpdate, roomsDB, usersDB } from '../globals
 import { handleLoginRequest } from './handlers/login-handler';
 import { handleAddUserToRoomRequest, handleCreateRoomRequest } from './handlers/rooms-handler';
 import { handleAddShipsRequest } from './handlers/ships-handler';
+import { handleAttackRequest } from './handlers/attack-handler';
+import { handleRandomAttackRequest } from './handlers/random-attack-handler';
 
 type RequestBody = {
     type: RequestType;
@@ -37,6 +39,14 @@ export const createHttpBackEndServer = (): WebSocketServer => {
 
             if (requestBody.type === RequestType.AddShips) {
                 handleAddShipsRequest(requestBody.data);
+            }
+
+            if (requestBody.type === RequestType.Attack) {
+                handleAttackRequest(requestBody.data);
+            }
+
+            if (requestBody.type === RequestType.RandomAttack) {
+                handleRandomAttackRequest(requestBody.data);
             }
         });
 
