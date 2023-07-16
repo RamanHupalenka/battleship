@@ -1,6 +1,14 @@
 import { RequestType, WebSocketWithIdx } from '../types';
 import { WebSocketServer } from 'ws';
-import { notifyAnotherUsersAboutRoomsUpdate, roomsDB, usersDB } from '../globals';
+import {
+    gamesDB,
+    notifyAnotherUsersAboutRoomsUpdate,
+    notifyUsersAboutWinnersUpdate,
+    roomsDB,
+    sockets,
+    usersDB,
+    winners,
+} from '../globals';
 import { handleLoginRequest } from './handlers/login-handler';
 import { handleAddUserToRoomRequest, handleCreateRoomRequest } from './handlers/rooms-handler';
 import { handleAddShipsRequest } from './handlers/ships-handler';
@@ -59,7 +67,39 @@ export const createHttpBackEndServer = (): WebSocketServer => {
 
             roomsDB.removeUserFromTheRoom(username, roomIdx);
 
+            const isUserInGame = usersDB.isUserInGame(username);
+
+            if (isUserInGame) {
+                const gameIdx = usersDB.getUserGameIdx(username);
+                const gameUsers = gamesDB.getGameUsers(gameIdx);
+                const winUser = gameUsers.find((u) => u.username !== username)!;
+                const userSocket = sockets[winUser.userIdx]!;
+
+                userSocket.send(
+                    JSON.stringify({
+                        type: RequestType.Finish,
+                        data: JSON.stringify({
+                            winPlayer: winUser.userIdx,
+                        }),
+                        id: 0,
+                    }),
+                );
+
+                gameUsers.forEach((u) => {
+                    usersDB.updateUserGameIdx(u.username, -1);
+                });
+
+                if (winners[username]) {
+                    winners[username]!.wins += 1;
+                } else {
+                    winners[username] = {
+                        wins: 1,
+                    };
+                }
+            }
+
             notifyAnotherUsersAboutRoomsUpdate();
+            notifyUsersAboutWinnersUpdate();
         });
     });
 

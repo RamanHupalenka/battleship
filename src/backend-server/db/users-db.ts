@@ -37,6 +37,10 @@ export class UsersDB {
         return this._users[username]!.roomIdx;
     }
 
+    getUserGameIdx(username: string): number {
+        return this._users[username]!.gameIdx;
+    }
+
     updateUserRoomIdx(username: string, roomIdx: number): void {
         this._users[username]!.roomIdx = roomIdx;
     }

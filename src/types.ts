@@ -11,6 +11,8 @@ export const enum RequestType {
     Turn = 'turn',
     Attack = 'attack',
     RandomAttack = 'randomAttack',
+    Finish = 'finish',
+    UpdateWinners = 'update_winners',
 }
 
 export type ShipPosition = {
@@ -98,5 +100,11 @@ export type GamesInfo = {
     [gameId: string]: {
         gameUsers: GameUserInfo[];
         currentPlayerIndex?: number;
+    };
+};
+
+export type WinnersMap = {
+    [name: string]: {
+        wins: number;
     };
 };
