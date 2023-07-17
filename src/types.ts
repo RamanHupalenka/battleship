@@ -15,6 +15,12 @@ export const enum RequestType {
     UpdateWinners = 'update_winners',
 }
 
+export const enum Side {
+    FrontEnd = '[FrontEnd]',
+    BackEnd = '[BackEnd]',
+    MainProgram = '[MainProgram]',
+}
+
 export type ShipPosition = {
     x: number;
     y: number;

@@ -1,4 +1,4 @@
-import { RequestType, WebSocketWithIdx } from '../types';
+import { RequestType, Side, WebSocketWithIdx } from '../types';
 import { WebSocketServer } from 'ws';
 import {
     gamesDB,
@@ -21,12 +21,20 @@ type RequestBody = {
     id: number;
 };
 
-export const createHttpBackEndServer = (): WebSocketServer => {
-    const backendPort = 3000;
+const BACKEND_PORT = 3000;
 
+export const createHttpBackEndServer = (): WebSocketServer => {
     const ws = new WebSocketServer({
         host: 'localhost',
-        port: backendPort,
+        port: BACKEND_PORT,
+    });
+
+    ws.on('listening', () => {
+        console.log(`${Side.BackEnd} Start ws server on the ws://localhost:${BACKEND_PORT}`);
+    });
+
+    ws.on('error', (err) => {
+        console.error(`${Side.BackEnd} Something went wrong: %O`, err);
     });
 
     ws.on('connection', (socket: WebSocketWithIdx) => {
@@ -101,18 +109,6 @@ export const createHttpBackEndServer = (): WebSocketServer => {
             notifyAnotherUsersAboutRoomsUpdate();
             notifyUsersAboutWinnersUpdate();
         });
-    });
-
-    ws.on('close', () => {
-        // console.log('Connection closed');
-    });
-
-    ws.on('error', (/* err */) => {
-        // console.error(err);
-    });
-
-    ws.on('listening', () => {
-        console.log(`Start BackEnd ws server on the ws://localhost:${backendPort}`);
     });
 
     return ws;

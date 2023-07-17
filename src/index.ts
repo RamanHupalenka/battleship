@@ -1,20 +1,21 @@
-import { createHttpBackEndServer } from './backend-server/index';
 import { createHttpFrontEndServer } from './frontend-server/index';
+import { createHttpBackEndServer } from './backend-server/index';
+import { Side } from './types';
 
 try {
-    const backend = createHttpBackEndServer();
     const frontend = createHttpFrontEndServer();
+    const backend = createHttpBackEndServer();
 
     process.on('SIGINT', (signal) => {
         if (signal === 'SIGINT') {
-            backend.close();
             frontend.close();
+            backend.close();
 
             process.exit();
         }
     });
-} catch {
-    console.error('Something went wrong');
+} catch (err) {
+    console.error(`${Side.MainProgram} Something went wrong: %O`, err);
 
     process.exit(1);
 }

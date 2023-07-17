@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { resolve } from 'path';
+import { Side } from '../types';
 import { getFileInfoFromURL } from '../utils/path';
 
 const handleError = (res: ServerResponse, err: unknown, statusCode: number): void => {
@@ -33,13 +34,17 @@ const requestsHandler = async (req: IncomingMessage, res: ServerResponse): Promi
     }
 };
 
+const FRONTEND_PORT = 8181;
+
 export const createHttpFrontEndServer = () => {
     const server = createServer(requestsHandler);
 
-    const frontendPort = 8181;
+    server.listen(FRONTEND_PORT, () => {
+        console.log(`${Side.FrontEnd} Start http server on the http://localhost:${FRONTEND_PORT}`);
+    });
 
-    server.listen(frontendPort, () => {
-        console.log(`Start FrondEnd http server on the http://localhost:${frontendPort}`);
+    server.on('error', (err) => {
+        console.error(`${Side.FrontEnd} Something went wrong: %O`, err);
     });
 
     return server;
